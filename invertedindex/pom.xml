@@ -17,5 +17,20 @@
           <scope>test</scope>
       </dependency>
   </dependencies>
-  
+    <build>
+      <plugins>
+          <plugin>
+              <groupId>org.apache.maven.plugins</groupId>
+              <artifactId>maven-jar-plugin</artifactId>
+              <configuration>
+                  <archive>
+                      <manifest>
+                          <mainClass>group1.inverted.Indexer</mainClass>
+                          <packageName>group1.inverted</packageName>
+                      </manifest>
+                  </archive>
+              </configuration>
+          </plugin>
+      </plugins>
+  </build>
 </project>

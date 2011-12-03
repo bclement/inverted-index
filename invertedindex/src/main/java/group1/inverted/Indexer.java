@@ -1,9 +1,7 @@
 package group1.inverted;
 
 import java.io.IOException;
-import java.net.URL;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
@@ -35,39 +33,41 @@ public class Indexer extends Configured implements Tool {
 		public void map(LongWritable key, Text contents,
 				OutputCollector<Text, Posting> output, Reporter reporter)
 				throws IOException {
-			
+
 			// Create the tokenizer
-			Tokenizer t = new Tokenizer(contents);
-			
-			// Create the collection for accumulation of word and word count associations
+			Tokenizer t;
+			try {
+				t = new Tokenizer(contents);
+			} catch (Exception e) {
+				e.printStackTrace();
+				throw new RuntimeException(e);
+			}
+
+			// Create the collection for accumulation of word and word count
+			// associations
 			java.util.Map<String, Integer> index = new java.util.HashMap<String, Integer>();
-			
+
 			// Collect word counts
 			Iterator<String> iter = t.iterator();
-			while (iter.hasNext())
-			{
+			while (iter.hasNext()) {
 				String word = iter.next();
-				if (index.containsKey(word))
-				{
+				if (index.containsKey(word)) {
 					index.put(word, index.get(word) + 1);
-				}
-				else
-				{
+				} else {
 					index.put(word, 1);
 				}
 			}
-			
+
 			// Emit postings
 			Iterator<String> keys = index.keySet().iterator();
-			while (keys.hasNext())
-			{
+			while (keys.hasNext()) {
 				String word = keys.next();
 				Posting p = new Posting();
 				p.docid = t.getDocId();
 				p.count = index.get(word);
 				output.collect(new Text(word), p);
 			}
-			
+
 		}
 	}
 
@@ -80,20 +80,20 @@ public class Indexer extends Configured implements Tool {
 		public void reduce(Text key, Iterator<Posting> values,
 				OutputCollector<Text, Posting> output, Reporter reporter)
 				throws IOException {
-			
+
 			// Create a sortable tree map.
-//			java.util.Map<String, Integer> postings = new java.util.TreeMap<String, Integer>();
-//			while (values.hasNext())
-//			{
-//				Posting p = values.next();
-//				postings.put(p.docid, p.count);
-//			}
-			
-			while (values.hasNext())
-			{
+			// java.util.Map<String, Integer> postings = new
+			// java.util.TreeMap<String, Integer>();
+			// while (values.hasNext())
+			// {
+			// Posting p = values.next();
+			// postings.put(p.docid, p.count);
+			// }
+
+			while (values.hasNext()) {
 				output.collect(key, values.next());
 			}
-			
+
 		}
 	}
 
