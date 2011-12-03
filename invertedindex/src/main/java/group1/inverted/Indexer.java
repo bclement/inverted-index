@@ -1,7 +1,9 @@
 package group1.inverted;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
@@ -25,15 +27,47 @@ import org.apache.hadoop.util.ToolRunner;
 public class Indexer extends Configured implements Tool {
 
 	public static class Map extends MapReduceBase implements
-			Mapper<LongWritable, Text, Text, Text> {
+			Mapper<LongWritable, Text, Text, Posting> {
 
 		private Text urlText = new Text();
 		private Text titleText = new Text();
 
-		public void map(LongWritable key, Text urls,
-				OutputCollector<Text, Text> output, Reporter reporter)
+		public void map(LongWritable key, Text contents,
+				OutputCollector<Text, Posting> output, Reporter reporter)
 				throws IOException {
-
+			
+			// Create the tokenizer
+			Tokenizer t = new Tokenizer(contents);
+			
+			// Create the collection for accumulation of word and word count associations
+			java.util.Map<String, Integer> index = new java.util.HashMap<String, Integer>();
+			
+			// Collect word counts
+			Iterator<String> iter = t.iterator();
+			while (iter.hasNext())
+			{
+				String word = iter.next();
+				if (index.containsKey(word))
+				{
+					index.put(word, index.get(word) + 1);
+				}
+				else
+				{
+					index.put(word, 1);
+				}
+			}
+			
+			// Emit postings
+			Iterator<String> keys = index.keySet().iterator();
+			while (keys.hasNext())
+			{
+				String word = keys.next();
+				Posting p = new Posting();
+				p.docid = t.getDocId();
+				p.count = index.get(word);
+				output.collect(new Text(word), p);
+			}
+			
 		}
 	}
 
@@ -41,12 +75,25 @@ public class Indexer extends Configured implements Tool {
 	 * A reducer class that just emits its input.
 	 */
 	public static class Reduce extends MapReduceBase implements
-			Reducer<Text, Text, Text, Text> {
+			Reducer<Text, Posting, Text, Posting> {
 
-		public void reduce(Text key, Iterator<Text> values,
-				OutputCollector<Text, Text> output, Reporter reporter)
+		public void reduce(Text key, Iterator<Posting> values,
+				OutputCollector<Text, Posting> output, Reporter reporter)
 				throws IOException {
-
+			
+			// Create a sortable tree map.
+//			java.util.Map<String, Integer> postings = new java.util.TreeMap<String, Integer>();
+//			while (values.hasNext())
+//			{
+//				Posting p = values.next();
+//				postings.put(p.docid, p.count);
+//			}
+			
+			while (values.hasNext())
+			{
+				output.collect(key, values.next());
+			}
+			
 		}
 	}
 
