@@ -1,6 +1,8 @@
 package group1.inverted;
 
-import org.apache.hadoop.conf.Configuration;
+import java.io.File;
+
+import org.apache.hadoop.fs.FileUtil;
 import org.apache.hadoop.util.ToolRunner;
 
 public class Main {
@@ -11,9 +13,14 @@ public class Main {
 	 */
 	public static void main(String[] args) throws Exception {
 		String arg = args[0];
+		File outputDir = new File(args[2]);
+		if (outputDir.exists()) {
+			FileUtil.fullyDelete(outputDir);
+		}
+
 		String[] newArgs = { args[1], args[2] };
 		if (arg.equalsIgnoreCase("index")) {
-			ToolRunner.run(new Configuration(), new Indexer(), newArgs);
+			ToolRunner.run(new Indexer(), newArgs);
 		} else if (arg.equalsIgnoreCase("query")) {
 			// query
 		} else {

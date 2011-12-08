@@ -3,47 +3,34 @@ package group1.inverted;
 import java.io.IOException;
 import java.util.Iterator;
 
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapred.FileInputFormat;
-import org.apache.hadoop.mapred.FileOutputFormat;
-import org.apache.hadoop.mapred.JobClient;
-import org.apache.hadoop.mapred.JobConf;
-import org.apache.hadoop.mapred.MapReduceBase;
-import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
-import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
-import org.apache.hadoop.mapred.lib.NLineInputFormat;
+import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.Reducer;
+import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
+import org.apache.hadoop.mapreduce.lib.input.FileSplit;
+import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
 public class Indexer extends Configured implements Tool {
 
-	public static class Map extends MapReduceBase implements
-			Mapper<LongWritable, Text, Text, Posting> {
-
-		protected String filename;
+	public static class Map extends Mapper<LongWritable, Text, Text, Posting> {
 
 		@Override
-		public void configure(JobConf job) {
-			// TODO Auto-generated method stub
-			super.configure(job);
-			filename = job.get("map.input.file");
-		}
-
-		public void map(LongWritable key, Text contents,
-				OutputCollector<Text, Posting> output, Reporter reporter)
-				throws IOException {
-
+		protected void map(LongWritable key, Text value, Context context)
+				throws IOException, InterruptedException {
+			FileSplit fileSplit = (FileSplit) context.getInputSplit();
+			String filename = fileSplit.getPath().getName();
 			// Create the tokenizer
 			Tokenizer t;
 			try {
-				t = new Tokenizer(filename, contents);
+				t = new Tokenizer(filename, value);
 			} catch (Exception e) {
 				e.printStackTrace();
 				throw new RuntimeException(e);
@@ -71,82 +58,55 @@ public class Indexer extends Configured implements Tool {
 				Posting p = new Posting();
 				p.docid = t.getDocId();
 				p.count = index.get(word);
-				output.collect(new Text(word), p);
+				context.write(new Text(word), p);
 			}
 
 		}
+
+		public void map(LongWritable key, Text contents,
+				OutputCollector<Text, Posting> output, Reporter reporter)
+				throws IOException {
+		}
+
 	}
 
 	/**
 	 * A reducer class that just emits its input.
 	 */
-	public static class Reduce extends MapReduceBase implements
-			Reducer<Text, Posting, Text, Posting> {
-
-		public void reduce(Text key, Iterator<Posting> values,
-				OutputCollector<Text, Posting> output, Reporter reporter)
-				throws IOException {
-
-			// Create a sortable tree map.
-			// java.util.Map<String, Integer> postings = new
-			// java.util.TreeMap<String, Integer>();
-			// while (values.hasNext())
-			// {
-			// Posting p = values.next();
-			// postings.put(p.docid, p.count);
-			// }
-
-			while (values.hasNext()) {
-				output.collect(key, values.next());
-			}
-
-		}
-	}
-
-	protected static class FullFileInputFormat extends NLineInputFormat {
+	public static class Reduce extends Reducer<Text, Posting, Text, Posting> {
 
 		@Override
-		protected boolean isSplitable(FileSystem fs, Path filename) {
-			// TODO Auto-generated method stub
-			return false;
+		protected void reduce(Text key, Iterable<Posting> values,
+				Context context) throws IOException, InterruptedException {
+			Iterator<Posting> i = values.iterator();
+			while (i.hasNext()) {
+				context.write(key, i.next());
+			}
 		}
 
 	}
 
 	public int run(String[] args) throws Exception {
-		JobConf conf = new JobConf(getConf(), Indexer.class);
-		conf.setJobName("multifetch");
 
-		// the keys are urls (strings)
-		conf.setOutputKeyClass(Text.class);
-		// the values are titles (strings)
-		conf.setOutputValueClass(Posting.class);
+		Job job = new Job();
+		job.setJarByClass(Indexer.class);
+		// job.setInputFormatClass(TextInputFormat.class);
+		job.setJobName("Indexer");
+		job.setMapperClass(Map.class);
+		job.setOutputKeyClass(Text.class);
+		job.setOutputValueClass(Posting.class);
+		job.setCombinerClass(Reduce.class);
+		job.setReducerClass(Reduce.class);
+		FileInputFormat.setInputPaths(job, new Path(args[0]));
+		FileOutputFormat.setOutputPath(job, new Path(args[1]));
 
-		conf.setInputFormat(FullFileInputFormat.class);
-
-		conf.setMapperClass(Map.class);
-		conf.setCombinerClass(Reduce.class);
-		conf.setReducerClass(Reduce.class);
-
-		// Make sure there are exactly 2 parameters left.
-		/*
-		 * if (other_args.size() != 2) {
-		 * System.out.println("ERROR: Wrong number of parameters: " +
-		 * other_args.size() + " instead of 2."); return printUsage(); }
-		 */
-		// conf.setInputPath(new Path(other_args.get(0)));
-		// conf.setOutputPath(new Path(other_args.get(1)));
-
-		FileInputFormat.setInputPaths(conf, new Path(args[0]));
-		FileOutputFormat.setOutputPath(conf, new Path(args[1]));
-
-		JobClient.runJob(conf);
+		job.waitForCompletion(true);
 		return 0;
 	}
 
 	public static void main(String[] args) throws Exception {
 		String[] newArgs = { args[1], args[2] };
-		int res = ToolRunner.run(new Configuration(), new Indexer(), newArgs);
+		int res = ToolRunner.run(new Indexer(), newArgs);
 		System.exit(res);
 	}
 
