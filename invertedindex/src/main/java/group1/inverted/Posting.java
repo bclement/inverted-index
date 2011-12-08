@@ -16,7 +16,7 @@ public class Posting implements Writable, Comparable<Posting>{
 	}
 	
 	public int compareTo(Posting rhs) {
-		return docid.compareTo(rhs.docid);
+		return new Integer(count).compareTo(rhs.count);
 	}
 
 	public void readFields(DataInput in) throws IOException {
