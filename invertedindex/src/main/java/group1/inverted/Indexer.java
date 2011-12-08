@@ -35,7 +35,7 @@ public class Indexer extends Configured implements Tool {
 			// Create the tokenizer
 			Tokenizer t;
 			try {
-				t = new Tokenizer(contents);
+				t = new Tokenizer(key, contents);
 			} catch (Exception e) {
 				e.printStackTrace();
 				throw new RuntimeException(e);
@@ -102,7 +102,7 @@ public class Indexer extends Configured implements Tool {
 		// the keys are urls (strings)
 		conf.setOutputKeyClass(Text.class);
 		// the values are titles (strings)
-		conf.setOutputValueClass(Text.class);
+		conf.setOutputValueClass(Posting.class);
 
 		conf.setMapperClass(Map.class);
 		conf.setCombinerClass(Reduce.class);

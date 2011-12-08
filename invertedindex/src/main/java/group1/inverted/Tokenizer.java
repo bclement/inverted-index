@@ -7,6 +7,7 @@ import java.util.StringTokenizer;
 
 import javax.xml.parsers.SAXParserFactory;
 
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 
 public class Tokenizer implements Iterable<String> {
@@ -24,6 +25,8 @@ public class Tokenizer implements Iterable<String> {
 	protected String data;
 
 	protected int curr;
+
+	protected long id;
 
 	protected static SAXParserFactory saxFact = SAXParserFactory.newInstance();
 
@@ -47,8 +50,9 @@ public class Tokenizer implements Iterable<String> {
 		public int end;
 	}
 
-	public Tokenizer(Text t) throws Exception {
+	public Tokenizer(LongWritable id, Text t) throws Exception {
 		parse(t);
+		this.id = id.get();
 	}
 
 	protected Tokenizer() {
@@ -138,7 +142,7 @@ public class Tokenizer implements Iterable<String> {
 	}
 
 	public String getDocId() {
-		return docId;
+		return (docId == null ? String.valueOf(id) : id + "<" + docId + ">");
 	}
 
 	public Iterator<String> iterator() {
