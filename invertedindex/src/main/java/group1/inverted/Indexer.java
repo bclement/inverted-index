@@ -1,6 +1,8 @@
 package group1.inverted;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Iterator;
 
 import org.apache.hadoop.conf.Configured;
@@ -79,6 +81,14 @@ public class Indexer extends Configured implements Tool {
 		protected void reduce(Text key, Iterable<Posting> values,
 				Context context) throws IOException, InterruptedException {
 			Iterator<Posting> i = values.iterator();
+			
+			ArrayList<Posting> postings = new ArrayList<Posting>();
+			while (i.hasNext()) {
+				postings.add(i.next());
+			}
+			Collections.sort(postings, Collections.reverseOrder());
+			
+			i = postings.iterator();
 			while (i.hasNext()) {
 				context.write(key, i.next());
 			}
