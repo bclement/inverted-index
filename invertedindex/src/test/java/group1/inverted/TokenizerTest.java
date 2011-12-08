@@ -13,23 +13,16 @@ public class TokenizerTest {
 
 	protected String simpleXml = "<DOC>\n"
 			+ "<DOCID>REU001-0013.940701</DOCID>\n"
-			+ "<TDTID>TDT000002</TDTID>\n"
-			+ "<SOURCE>REUTERS</SOURCE>\n"
-			+ "<DATE>07/01/94 00:57</DATE>\n"
 			+ "<TITLE> PALESTINIANS TO RECEIVE AID TO POLICE GAZA, JERICHO</TITLE>\n"
-			+ "<HEADLINE> PALESTINIANS TO RECEIVE AID TO POLICE GAZA, JERICHO</HEADLINE>\n"
-			+ "<SUBJECT> BC-MIDEAST-AID </SUBJECT>\n" + "<AUTHOR></AUTHOR>\n"
-			+ "<TEXT>the cake is a lie  flabber newline</TEXT></DOC>";
+			+ "<SUBJECT> BC-MIDEAST-AID </SUBJECT>\n"
+			+ "<AUTHOR></AUTHOR>\n"
+			+ "<TEXT><crap></crap><p>the cake is a lie</p>  flabber newline</TEXT></DOC>";
 
-	protected String badXml = "<DOC>\n"
+	protected String badXml = "<DOC><p>\n"
 			+ "<DOCID>REU001-0013.940701<WhoKnows>\n"
-			+ "<TDTID>TDT000002</TDTID>\n"
-			+ "<SOURCE>REUTERS</SOURCE>\n"
-			+ "<DATE>07/01/94 00:57</DATE>\n"
 			+ "<TITLE> PALESTINIANS TO RECEIVE AID TO POLICE GAZA, JERICHO</TITLE>\n"
-			+ "<HEADLINE> PALESTINIANS TO RECEIVE AID TO POLICE GAZA, JERICHO</HEADLINE>\n"
 			+ "<SUBJECT> BC-MIDEAST-AID </SUBJECT>\n" + "<AUTHOR></AUTHOR>\n"
-			+ "<TEXT>the cake is a lie  flabber newline";
+			+ "<TEXT><p>the cake is a lie  flabber newline";
 
 	@Test
 	public void simpleTest() throws Exception {
@@ -42,10 +35,11 @@ public class TokenizerTest {
 		String docId = tokenizer.getDocId();
 		Assert.assertEquals("0<REU001-0013.940701>", docId);
 		Iterator<String> i = tokenizer.iterator();
-		Assert.assertEquals("PALESTINIANS", i.next());
-		Assert.assertEquals("RECEIVE", i.next());
-		Assert.assertEquals("POLICE", i.next());
-		Assert.assertEquals("JERICHO", i.next());
+		Assert.assertEquals("palestinians", i.next());
+		Assert.assertEquals("receive", i.next());
+		Assert.assertEquals("police", i.next());
+		Assert.assertEquals("jericho", i.next());
+		Assert.assertEquals("bc-mideast-aid", i.next());
 		Assert.assertEquals("flabber", i.next());
 		Assert.assertEquals("newline", i.next());
 		Assert.assertEquals(false, i.hasNext());

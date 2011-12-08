@@ -46,6 +46,7 @@ public class Indexer extends Configured implements Tool {
 
 			String filename = file.getName();
 			String value = readFile(file);
+
 			// Create the tokenizer
 			Tokenizer t;
 			try {

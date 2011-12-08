@@ -5,8 +5,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.StringTokenizer;
 
-import javax.xml.parsers.SAXParserFactory;
-
 import org.apache.hadoop.io.Text;
 
 public class Tokenizer implements Iterable<String> {
@@ -15,19 +13,17 @@ public class Tokenizer implements Iterable<String> {
 
 	protected List<String> tokens = new ArrayList<String>(50);
 
-	protected static final String ID_TAG = "DOCID";
+	protected static final String ID_TAG = "docid";
 
-	protected static final String TITLE_TAG = "TITLE";
+	protected static final String TITLE_TAG = "title";
 
-	protected static final String TEXT_TAG = "TEXT";
+	protected static final String TEXT_TAG = "text";
 
 	protected String data;
 
 	protected int curr;
 
 	protected String key;
-
-	protected static SAXParserFactory saxFact = SAXParserFactory.newInstance();
 
 	protected enum TYPE {
 		DOCID, TEXT, PASS
@@ -76,24 +72,24 @@ public class Tokenizer implements Iterable<String> {
 		TextRun rval;
 		String tagName = getBeween(tag);
 		if (tagName.equalsIgnoreCase(ID_TAG)) {
-			TextBounds close = findClose(tag);
-			String id = getBeween(tag, close).trim();
+			TextBounds close = findNext(tag);
+			String id = getBeween(tag, close).trim().toUpperCase();
 			rval = new TextRun(id, TYPE.DOCID);
 			curr = close.end;
-		} else if (tagName.equalsIgnoreCase(TEXT_TAG)
-				|| tagName.equalsIgnoreCase(TITLE_TAG)) {
-			TextBounds close = findClose(tag);
-			String str = getBeween(tag, close);
-			rval = new TextRun(str, TYPE.TEXT);
-			curr = close.end;
 		} else {
-			rval = new TextRun(null, TYPE.PASS);
-			curr = tag.end;
+			TextBounds next = findNext(tag);
+			String str = getBeween(tag, next);
+			if (str.trim().isEmpty()) {
+				rval = new TextRun(null, TYPE.PASS);
+			} else {
+				rval = new TextRun(str, TYPE.TEXT);
+			}
+			curr = next.start;
 		}
 		return rval;
 	}
 
-	protected TextBounds findClose(TextBounds open) {
+	protected TextBounds findNext(TextBounds open) {
 		TextBounds close = findTag(open.end);
 		if (close.done) {
 			close.start = data.length();
@@ -124,7 +120,7 @@ public class Tokenizer implements Iterable<String> {
 	}
 
 	protected void parse(String t) {
-		data = t.trim();
+		data = t.trim().toLowerCase();
 
 		TextRun run = getNext();
 		while (run != null) {
@@ -134,7 +130,7 @@ public class Tokenizer implements Iterable<String> {
 				break;
 			case TEXT:
 				StringTokenizer toker = new StringTokenizer(run.value,
-						" \t\n.,");
+						" \t\n.,\"'`()[]{}:");
 				while (toker.hasMoreTokens()) {
 					String next = toker.nextToken();
 					if (next.length() >= 5) {
