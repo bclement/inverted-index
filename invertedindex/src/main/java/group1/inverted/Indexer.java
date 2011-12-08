@@ -38,7 +38,6 @@ public class Indexer extends Configured implements Tool {
 			while (toker.hasMoreTokens()) {
 				Path path = new Path(inputParent, toker.nextToken());
 				process(path, context);
-				System.out.println(key + " " + path.getName());
 			}
 		}
 
@@ -56,8 +55,6 @@ public class Indexer extends Configured implements Tool {
 				e.printStackTrace();
 				throw new RuntimeException(e);
 			}
-
-			System.out.println("docid: " + t.getDocId());
 
 			// Create the collection for accumulation of word and word count
 			// associations
@@ -82,9 +79,6 @@ public class Indexer extends Configured implements Tool {
 				p.docid = t.getDocId();
 				p.count = index.get(word);
 				context.write(new Text(word), p);
-				if (word.equalsIgnoreCase("because")) {
-					System.out.println(p);
-				}
 			}
 
 		}

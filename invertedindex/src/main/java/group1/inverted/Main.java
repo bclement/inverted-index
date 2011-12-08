@@ -22,7 +22,7 @@ public class Main {
 		if (arg.equalsIgnoreCase("index")) {
 			ToolRunner.run(new Indexer(), newArgs);
 		} else if (arg.equalsIgnoreCase("query")) {
-			// query
+			ToolRunner.run(new QueryHandler(), newArgs);
 		} else {
 			System.err.println("Usage: [index|query] [inputdir] [outputdir]");
 		}
