@@ -3,9 +3,9 @@ package group1.inverted;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.StringTokenizer;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
@@ -24,23 +24,34 @@ import org.apache.hadoop.util.Tool;
 
 public class QueryHandler extends Configured implements Tool {
 
-	public static class Map extends Mapper<LongWritable, Text, LongWritable, Text> {
+	public static class Map extends
+			Mapper<LongWritable, Text, LongWritable, Text> {
+
+		protected Set<String> qset;
+
 		@Override
-		public void map(LongWritable unused, Text value, Context context)
-				throws IOException, InterruptedException {
+		protected void setup(Context context) throws IOException,
+				InterruptedException {
+			super.setup(context);
 			FileSplit fileSplit = (FileSplit) context.getInputSplit();
 			Path inputDir = fileSplit.getPath().getParent();
 			Path inputParent = inputDir.getParent();
 			String query = readFile(new Path(inputParent, "query.txt"));
-			Set<String> qset = new HashSet<String>();
-			qset.addAll(Arrays.asList(query.toLowerCase().split(" ")));
-			
-			IndexParser.Index index = IndexParser.parseLine(value.toString());
+			qset = new HashSet<String>();
+			StringTokenizer toker = new StringTokenizer(query.toLowerCase(),
+					" \t\n");
+			while (toker.hasMoreTokens()) {
+				qset.add(toker.nextToken());
+			}
+		}
 
-			String current = index.word; // get from index parse method
-			String docId = index.docid;
-			if (qset.contains(current)) {
-				context.write(new LongWritable(0), new Text(docId));
+		@Override
+		public void map(LongWritable unused, Text value, Context context)
+				throws IOException, InterruptedException {
+
+			IndexParser.Index index = IndexParser.parseLine(value.toString());
+			if (qset.contains(index.word)) {
+				context.write(new LongWritable(0), new Text(index.docid));
 			}
 		}
 
