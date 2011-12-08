@@ -5,6 +5,7 @@ import java.util.Iterator;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
@@ -17,6 +18,7 @@ import org.apache.hadoop.mapred.Mapper;
 import org.apache.hadoop.mapred.OutputCollector;
 import org.apache.hadoop.mapred.Reducer;
 import org.apache.hadoop.mapred.Reporter;
+import org.apache.hadoop.mapred.lib.NLineInputFormat;
 import org.apache.hadoop.util.Tool;
 import org.apache.hadoop.util.ToolRunner;
 
@@ -25,8 +27,14 @@ public class Indexer extends Configured implements Tool {
 	public static class Map extends MapReduceBase implements
 			Mapper<LongWritable, Text, Text, Posting> {
 
-		private Text urlText = new Text();
-		private Text titleText = new Text();
+		protected String filename;
+
+		@Override
+		public void configure(JobConf job) {
+			// TODO Auto-generated method stub
+			super.configure(job);
+			filename = job.get("map.input.file");
+		}
 
 		public void map(LongWritable key, Text contents,
 				OutputCollector<Text, Posting> output, Reporter reporter)
@@ -35,7 +43,7 @@ public class Indexer extends Configured implements Tool {
 			// Create the tokenizer
 			Tokenizer t;
 			try {
-				t = new Tokenizer(key, contents);
+				t = new Tokenizer(filename, contents);
 			} catch (Exception e) {
 				e.printStackTrace();
 				throw new RuntimeException(e);
@@ -95,6 +103,16 @@ public class Indexer extends Configured implements Tool {
 		}
 	}
 
+	protected static class FullFileInputFormat extends NLineInputFormat {
+
+		@Override
+		protected boolean isSplitable(FileSystem fs, Path filename) {
+			// TODO Auto-generated method stub
+			return false;
+		}
+
+	}
+
 	public int run(String[] args) throws Exception {
 		JobConf conf = new JobConf(getConf(), Indexer.class);
 		conf.setJobName("multifetch");
@@ -103,6 +121,8 @@ public class Indexer extends Configured implements Tool {
 		conf.setOutputKeyClass(Text.class);
 		// the values are titles (strings)
 		conf.setOutputValueClass(Posting.class);
+
+		conf.setInputFormat(FullFileInputFormat.class);
 
 		conf.setMapperClass(Map.class);
 		conf.setCombinerClass(Reduce.class);

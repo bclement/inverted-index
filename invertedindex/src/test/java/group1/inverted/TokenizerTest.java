@@ -6,7 +6,6 @@ import java.util.Iterator;
 
 import junit.framework.Assert;
 
-import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.junit.Test;
 
@@ -39,7 +38,7 @@ public class TokenizerTest {
 
 	public void assertXml(String xml) throws Exception {
 		Text text = new Text(xml);
-		Tokenizer tokenizer = new Tokenizer(new LongWritable(0), text);
+		Tokenizer tokenizer = new Tokenizer("0", text);
 		String docId = tokenizer.getDocId();
 		Assert.assertEquals("0<REU001-0013.940701>", docId);
 		Iterator<String> i = tokenizer.iterator();
