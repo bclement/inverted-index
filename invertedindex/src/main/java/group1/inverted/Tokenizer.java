@@ -50,11 +50,16 @@ public class Tokenizer implements Iterable<String> {
 	}
 
 	public Tokenizer(Text key, Text t) throws Exception {
-		parse(t);
+		parse(t.toString());
 		this.key = key.toString();
 	}
 
 	public Tokenizer(String key, Text t) throws Exception {
+		parse(t.toString());
+		this.key = key;
+	}
+
+	public Tokenizer(String key, String t) {
 		parse(t);
 		this.key = key;
 	}
@@ -118,8 +123,8 @@ public class Tokenizer implements Iterable<String> {
 		return data.substring(open.end + 1, close.start);
 	}
 
-	protected void parse(Text t) {
-		data = new String(t.getBytes()).trim();
+	protected void parse(String t) {
+		data = t.trim();
 
 		TextRun run = getNext();
 		while (run != null) {

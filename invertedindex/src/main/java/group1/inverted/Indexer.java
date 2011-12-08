@@ -1,16 +1,20 @@
 package group1.inverted;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.io.InputStreamReader;
 import java.util.Iterator;
+import java.util.StringTokenizer;
 
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.conf.Configured;
+import org.apache.hadoop.fs.FSDataInputStream;
+import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapred.OutputCollector;
-import org.apache.hadoop.mapred.Reporter;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.Reducer;
@@ -28,7 +32,20 @@ public class Indexer extends Configured implements Tool {
 		protected void map(LongWritable key, Text value, Context context)
 				throws IOException, InterruptedException {
 			FileSplit fileSplit = (FileSplit) context.getInputSplit();
-			String filename = fileSplit.getPath().getName();
+			Path inputDir = fileSplit.getPath().getParent();
+			Path inputParent = inputDir.getParent();
+			StringTokenizer toker = new StringTokenizer(value.toString());
+			while (toker.hasMoreTokens()) {
+				Path path = new Path(inputParent, toker.nextToken());
+				process(path, context);
+			}
+		}
+
+		protected void process(Path file, Context context) throws IOException,
+				InterruptedException {
+
+			String filename = file.getName();
+			String value = readFile(file);
 			// Create the tokenizer
 			Tokenizer t;
 			try {
@@ -65,9 +82,18 @@ public class Indexer extends Configured implements Tool {
 
 		}
 
-		public void map(LongWritable key, Text contents,
-				OutputCollector<Text, Posting> output, Reporter reporter)
-				throws IOException {
+		protected String readFile(Path p) throws IOException {
+			FileSystem fs = FileSystem.get(new Configuration());
+			FSDataInputStream in = fs.open(p);
+			BufferedReader reader = new BufferedReader(
+					new InputStreamReader(in));
+			String line = null;
+			StringBuilder builder = new StringBuilder();
+			while ((line = reader.readLine()) != null) {
+				builder.append(line).append("\n");
+			}
+			reader.close();
+			return builder.toString();
 		}
 
 	}
