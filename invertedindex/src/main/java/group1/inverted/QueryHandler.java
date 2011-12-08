@@ -24,9 +24,9 @@ import org.apache.hadoop.util.Tool;
 
 public class QueryHandler extends Configured implements Tool {
 
-	public static class Map extends Mapper<Text, Text, LongWritable, Text> {
+	public static class Map extends Mapper<LongWritable, Text, LongWritable, Text> {
 		@Override
-		public void map(Text unused, Text value, Context context)
+		public void map(LongWritable unused, Text value, Context context)
 				throws IOException, InterruptedException {
 			FileSplit fileSplit = (FileSplit) context.getInputSplit();
 			Path inputDir = fileSplit.getPath().getParent();
@@ -34,9 +34,11 @@ public class QueryHandler extends Configured implements Tool {
 			String query = readFile(new Path(inputParent, "query.txt"));
 			Set<String> qset = new HashSet<String>();
 			qset.addAll(Arrays.asList(query.toLowerCase().split(" ")));
+			
+			IndexParser.Index index = IndexParser.parseLine(value.toString());
 
-			String current = null; // get from index parse method
-			String docId = null;
+			String current = index.word; // get from index parse method
+			String docId = index.docid;
 			if (qset.contains(current)) {
 				context.write(new LongWritable(0), new Text(docId));
 			}
