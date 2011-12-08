@@ -2,9 +2,9 @@ package group1.inverted;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.io.InputStreamReader;
 import java.util.Iterator;
 import java.util.StringTokenizer;
 
@@ -38,6 +38,7 @@ public class Indexer extends Configured implements Tool {
 			while (toker.hasMoreTokens()) {
 				Path path = new Path(inputParent, toker.nextToken());
 				process(path, context);
+				System.out.println(key + " " + path.getName());
 			}
 		}
 
@@ -55,6 +56,8 @@ public class Indexer extends Configured implements Tool {
 				e.printStackTrace();
 				throw new RuntimeException(e);
 			}
+
+			System.out.println("docid: " + t.getDocId());
 
 			// Create the collection for accumulation of word and word count
 			// associations
@@ -79,6 +82,9 @@ public class Indexer extends Configured implements Tool {
 				p.docid = t.getDocId();
 				p.count = index.get(word);
 				context.write(new Text(word), p);
+				if (word.equalsIgnoreCase("because")) {
+					System.out.println(p);
+				}
 			}
 
 		}
@@ -107,17 +113,25 @@ public class Indexer extends Configured implements Tool {
 		@Override
 		protected void reduce(Text key, Iterable<Posting> values,
 				Context context) throws IOException, InterruptedException {
-			Iterator<Posting> i = values.iterator();
-			
+
 			ArrayList<Posting> postings = new ArrayList<Posting>();
-			while (i.hasNext()) {
-				postings.add(i.next());
+			for (Posting next : values) {
+
+				postings.add(new Posting(next));
+				// context.write(key, next);
 			}
+
+			// if (key.toString().equalsIgnoreCase(tester)) {
+			// for (Posting p : postings) {
+			// System.out.println("got: " + p);
+			// }
+			// }
+
 			Collections.sort(postings, Collections.reverseOrder());
-			
-			i = postings.iterator();
-			while (i.hasNext()) {
-				context.write(key, i.next());
+
+			for (Posting next : postings) {
+				context.write(key, next);
+				// i.next();
 			}
 		}
 
