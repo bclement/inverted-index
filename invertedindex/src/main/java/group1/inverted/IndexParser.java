@@ -1,39 +1,36 @@
 package group1.inverted;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
-import java.util.HashMap;
 
 public class IndexParser {
 	
-	private final HashMap<String, String> index = new HashMap<String, String>();
-	
-	public IndexParser(final String fileName) throws IOException
-	{
-		init(fileName);
+	public static class Index {
+		public String word = null;
+		public Integer count = null;
+		public String docid = null;
 	}
 
-	private void init(String fileName) throws IOException {
-		BufferedReader reader = new BufferedReader(new FileReader(new File(fileName)));
-		String line;
-		while ((line = reader.readLine()) != null)
+	public static Index parseLine(final String line) throws IOException {
+		Index retval = new Index();
+		
+		String[] part1 = line.split("[\\s|\\t]+");
+		if (part1.length == 2)
 		{
-			String[] parts = line.split("\\s+");
-			if (parts.length == 2)
+			retval.word = part1[0];
+			String[] part2 = line.split(":");
+			if (part2.length == 2)
 			{
-				index.put(parts[0], parts[1]);
+				try
+				{
+					retval.count = Integer.parseInt(part2[0]);
+				}
+				catch (final Exception anything)
+				{
+				}
+				retval.docid = part2[1];
 			}
 		}
-	}
-
-	public String[] get(final String word)
-	{
-		if (index.containsKey(word))
-		{
-			return index.get(word).split(":");
-		}
-		return null;
+		
+		return retval;
 	}
 }
