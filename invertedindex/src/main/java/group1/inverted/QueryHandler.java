@@ -12,6 +12,7 @@ import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.Mapper;
@@ -23,7 +24,7 @@ import org.apache.hadoop.util.Tool;
 
 public class QueryHandler extends Configured implements Tool {
 
-	public static class Map extends Mapper<Text, Text, Text, Text> {
+	public static class Map extends Mapper<Text, Text, LongWritable, Text> {
 		@Override
 		public void map(Text unused, Text value, Context context)
 				throws IOException, InterruptedException {
@@ -37,7 +38,7 @@ public class QueryHandler extends Configured implements Tool {
 			String current = null; // get from index parse method
 			String docId = null;
 			if (qset.contains(current)) {
-				context.write(new Text(current), new Text(docId));
+				context.write(new LongWritable(0), new Text(docId));
 			}
 		}
 
@@ -56,12 +57,16 @@ public class QueryHandler extends Configured implements Tool {
 		}
 	}
 
-	public static class Reduce extends Reducer<Text, Text, Text, Text> {
+	public static class Reduce extends Reducer<LongWritable, Text, Text, Text> {
 		@Override
-		public void reduce(Text key, Iterable<Text> values, Context context)
-				throws IOException, InterruptedException {
+		public void reduce(LongWritable key, Iterable<Text> values,
+				Context context) throws IOException, InterruptedException {
+			Set<String> idSet = new HashSet<String>();
 			for (Text t : values) {
-				context.write(key, t);
+				idSet.add(new String(t.toString()));
+			}
+			for (String id : idSet) {
+				context.write(new Text("Result: "), new Text(id));
 			}
 		}
 	}
@@ -71,9 +76,9 @@ public class QueryHandler extends Configured implements Tool {
 		job.setJarByClass(QueryHandler.class);
 		job.setJobName("QueryHandler");
 		job.setMapperClass(Map.class);
-		job.setOutputKeyClass(Text.class);
+		job.setOutputKeyClass(LongWritable.class);
 		job.setOutputValueClass(Text.class);
-		job.setCombinerClass(Reduce.class);
+		// job.setCombinerClass(Reduce.class);
 		job.setReducerClass(Reduce.class);
 		FileInputFormat.setInputPaths(job, new Path(args[0]));
 		FileOutputFormat.setOutputPath(job, new Path(args[1]));
