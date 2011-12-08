@@ -33,10 +33,10 @@ public class Indexer extends Configured implements Tool {
 				throws IOException, InterruptedException {
 			FileSplit fileSplit = (FileSplit) context.getInputSplit();
 			Path inputDir = fileSplit.getPath().getParent();
-			Path inputParent = inputDir.getParent();
+			// Path inputParent = inputDir.getParent();
 			StringTokenizer toker = new StringTokenizer(value.toString());
 			while (toker.hasMoreTokens()) {
-				Path path = new Path(inputParent, toker.nextToken());
+				Path path = new Path(inputDir, toker.nextToken());
 				process(path, context);
 			}
 		}

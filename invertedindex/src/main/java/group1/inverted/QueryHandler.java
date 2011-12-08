@@ -35,8 +35,7 @@ public class QueryHandler extends Configured implements Tool {
 			super.setup(context);
 			FileSplit fileSplit = (FileSplit) context.getInputSplit();
 			Path inputDir = fileSplit.getPath().getParent();
-			Path inputParent = inputDir.getParent();
-			String query = readFile(new Path(inputParent, "query.txt"));
+			String query = readFile(new Path(inputDir, "_query.txt"));
 			qset = new HashSet<String>();
 			StringTokenizer toker = new StringTokenizer(query.toLowerCase(),
 					" \t\n");
