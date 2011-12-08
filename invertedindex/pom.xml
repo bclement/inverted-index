@@ -25,7 +25,7 @@
               <configuration>
                   <archive>
                       <manifest>
-                          <mainClass>group1.inverted.Indexer</mainClass>
+                          <mainClass>group1.inverted.Main</mainClass>
                           <packageName>group1.inverted</packageName>
                       </manifest>
                   </archive>
